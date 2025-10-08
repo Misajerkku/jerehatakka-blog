@@ -1,18 +1,12 @@
 pipeline {
   agent any
 
-  options {
-    timestamps()
-    ansiColor('xterm')
-    skipDefaultCheckout(false)
-  }
-
   environment {
     SONARQUBE_ENV = 'SonarQubeLocal'
   }
 
   tools {
-    // Remove if your project isn't Node/TS
+    // Remove if you don't use Node/TS
     nodejs 'node18'
   }
 
