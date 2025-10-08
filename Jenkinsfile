@@ -1,20 +1,25 @@
 pipeline {
   agent any
 
+  // Turn off the implicit "Declarative: Checkout SCM" stage
+  options { skipDefaultCheckout(true) }
+
   environment {
-    SONARQUBE_ENV = 'SonarQubeLocal' // Manage Jenkins → System → SonarQube servers
+    SONARQUBE_ENV = 'SonarQubeLocal'
+    REPO_URL      = 'https://github.com/Misajerkku/jerehatakka-blog.git'
+    REPO_BRANCH   = 'main'
   }
 
-  // Keep only if your app uses Node/TS and you've configured the NodeJS tool named "node18"
-  tools { nodejs 'node18' }
+  tools { nodejs 'node18' } // remove if not using Node/TS
 
   stages {
 
-    // Built-in Declarative "Checkout SCM" will run automatically before the first stage.
-    // If you ever disable it with options { skipDefaultCheckout(true) }, then add an explicit checkout(scm) step.
-
-    stage('Show Commit') {
+    stage('Checkout') {
       steps {
+        // start from a clean workspace to avoid "not in a git directory"
+        deleteDir()
+        // do a full, explicit checkout
+        git branch: "${env.REPO_BRANCH}", url: "${env.REPO_URL}"
         sh 'git log -1 --pretty=oneline || true'
       }
     }
@@ -61,7 +66,6 @@ pipeline {
       }
     }
 
-    // Dependency-Check via Docker (no Jenkins tool install needed)
     stage('OWASP Dependency-Check') {
       steps {
         sh '''
@@ -121,8 +125,8 @@ pipeline {
   }
 
   post {
-    success { echo '✅ Build successful' }
+    success  { echo '✅ Build successful' }
     unstable { echo '🟠 Build unstable' }
-    failure { echo '❌ Build failed' }
+    failure  { echo '❌ Build failed' }
   }
 }
