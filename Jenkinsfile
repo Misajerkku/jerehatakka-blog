@@ -2,11 +2,12 @@ pipeline {
   agent any
 
   environment {
-    SONARQUBE_ENV = 'SonarQubeLocal'
+    SONARQUBE_ENV = 'SonarQubeLocal' // Manage Jenkins → System → SonarQube servers
   }
 
+  // If your app is Node/TS and you installed the NodeJS tool, keep this.
+  // If not using Node, you can delete the tools block safely.
   tools {
-    // Remove if you don't use Node/TS
     nodejs 'node18'
   }
 
@@ -65,15 +66,21 @@ pipeline {
       }
     }
 
+    // Uses Dockerized OWASP Dependency-Check (no Jenkins tool config needed)
     stage('OWASP Dependency-Check') {
       steps {
-        dependencyCheck additionalArguments: '''
-          --format "HTML" \
-          --format "XML" \
-          --scan "." \
-          --out "dependency-check-report" \
-          --enableRetired
-        ''', odcInstallation: 'OWASP Dependency-Check'
+        sh '''
+          mkdir -p dependency-check-report dc-data
+          docker run --rm \
+            -v "$PWD":/src \
+            -v "$PWD/dc-data":/usr/share/dependency-check/data \
+            -v "$PWD/dependency-check-report":/report \
+            owasp/dependency-check:latest \
+            --scan /src \
+            --format "HTML" --format "XML" \
+            --out /report \
+            --enableRetired
+        '''
       }
       post {
         always {
@@ -84,6 +91,7 @@ pipeline {
             reportFiles: 'dependency-check-report.html',
             reportName: 'Dependency-Check Report'
           ])
+          // Parses the XML report for nice trend graphs in Jenkins
           dependencyCheckPublisher pattern: 'dependency-check-report/dependency-check-report.xml'
           archiveArtifacts artifacts: 'dependency-check-report/**', onlyIfSuccessful: false, fingerprint: true
         }
@@ -108,7 +116,7 @@ pipeline {
       steps {
         timeout(time: 10, unit: 'MINUTES') {
           script {
-            def qg = waitForQualityGate()
+            def qg = waitForQualityGate()  // requires Sonar webhook or will poll
             if (qg.status != 'OK') {
               error "Quality Gate failed: ${qg.status}"
             }
@@ -120,6 +128,7 @@ pipeline {
 
   post {
     success { echo '✅ Build successful' }
+    unstable { echo '🟠 Build unstable' }
     failure { echo '❌ Build failed' }
   }
 }
