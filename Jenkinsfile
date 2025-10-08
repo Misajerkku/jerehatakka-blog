@@ -5,25 +5,22 @@ pipeline {
     SONARQUBE_ENV = 'SonarQubeLocal' // Manage Jenkins → System → SonarQube servers
   }
 
-  // If your app is Node/TS and you installed the NodeJS tool, keep this.
-  // If not using Node, you can delete the tools block safely.
-  tools {
-    nodejs 'node18'
-  }
+  // Keep only if your app uses Node/TS and you've configured the NodeJS tool named "node18"
+  tools { nodejs 'node18' }
 
   stages {
 
-    stage('Checkout') {
+    // Built-in Declarative "Checkout SCM" will run automatically before the first stage.
+    // If you ever disable it with options { skipDefaultCheckout(true) }, then add an explicit checkout(scm) step.
+
+    stage('Show Commit') {
       steps {
-        checkout(scm)
         sh 'git log -1 --pretty=oneline || true'
       }
     }
 
     stage('Install Dependencies') {
-      when {
-        expression { fileExists('package.json') }
-      }
+      when { expression { fileExists('package.json') } }
       steps {
         sh '''
           if [ -f package-lock.json ]; then
@@ -52,9 +49,7 @@ pipeline {
     }
 
     stage('Unit Tests') {
-      when {
-        expression { fileExists('package.json') }
-      }
+      when { expression { fileExists('package.json') } }
       steps {
         sh 'npm test || true'
       }
@@ -66,7 +61,7 @@ pipeline {
       }
     }
 
-    // Uses Dockerized OWASP Dependency-Check (no Jenkins tool config needed)
+    // Dependency-Check via Docker (no Jenkins tool install needed)
     stage('OWASP Dependency-Check') {
       steps {
         sh '''
@@ -91,7 +86,6 @@ pipeline {
             reportFiles: 'dependency-check-report.html',
             reportName: 'Dependency-Check Report'
           ])
-          // Parses the XML report for nice trend graphs in Jenkins
           dependencyCheckPublisher pattern: 'dependency-check-report/dependency-check-report.xml'
           archiveArtifacts artifacts: 'dependency-check-report/**', onlyIfSuccessful: false, fingerprint: true
         }
@@ -116,7 +110,7 @@ pipeline {
       steps {
         timeout(time: 10, unit: 'MINUTES') {
           script {
-            def qg = waitForQualityGate()  // requires Sonar webhook or will poll
+            def qg = waitForQualityGate()
             if (qg.status != 'OK') {
               error "Quality Gate failed: ${qg.status}"
             }
