@@ -1,0 +1,13 @@
+{
+  "name": "blog",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "jest --coverage --ci",
+    "build": "echo \"no build\""
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}
