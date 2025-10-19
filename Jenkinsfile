@@ -6,7 +6,7 @@ pipeline {
   environment {
     SONARQUBE_ENV = 'SonarQubeLocal'
     REPO_URL      = 'https://github.com/Misajerkku/jerehatakka-blog.git'
-    REPO_BRANCH   = 'main'
+    REPO_BRANCH   = 'defects'
   }
 
   tools { nodejs 'node18' }
