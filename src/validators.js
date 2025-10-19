@@ -1,4 +1,3 @@
-export const isStrongPassword = (s) =>
-  typeof s === "string" && s.length >= 12 && /[0-9]/.test(s) && /[A-Z]/.test(s);
+export const isStrongPassword = (s) => typeof s === "string" && s.length >= 4; // DEFECT: far too weak policy
 
 export const sanitizeTitle = (t) => String(t).replace(/[<>]/g, "");
